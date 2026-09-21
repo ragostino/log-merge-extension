@@ -7,3 +7,6 @@
 /package.json_20260917c
 /tabella_colori.xlsx
 /~$tabella_colori.xlsx
+.vscodeignore_parked
+outold/
+log-merge-extension-0.0.1.vsix.zip
