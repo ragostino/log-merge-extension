@@ -11,6 +11,7 @@ export interface MergedLine {
     fileIndex: number;      // indice file 0..19
     fileLineIndex: number;  // numero riga originale
     severityIndex: number;  // 0..5
+    timestamp: number;      // timestamp estratto dalla riga
     isFirst: boolean;       // prima riga del file
     isLast: boolean;        // ultima riga del file
 }
@@ -44,7 +45,14 @@ function extractTimestamp(line: string): number {
 //
 // Funzione principale: merge dei file
 //
-export async function mergeLogs(files: vscode.Uri[]): Promise<{ lines: MergedLine[], text: string }> {
+export async function mergeLogs(
+    files: vscode.Uri[],
+    progressCallback?: (
+        current: number,
+        total: number,
+        fileName: string
+    ) => void
+): Promise<{ lines: MergedLine[], text: string }> {
 
     const allLines: MergedLine[] = [];
 
@@ -52,6 +60,12 @@ export async function mergeLogs(files: vscode.Uri[]): Promise<{ lines: MergedLin
 
         const fileUri = files[fileIndex];
         const root = fileUri.path.split("/").pop() || `file${fileIndex}`;
+
+        progressCallback?.(
+            fileIndex + 1,
+            files.length,
+            fileUri.path.split('/').pop() ?? fileUri.fsPath
+        );
 
         const stream = fs.createReadStream(fileUri.fsPath);
         const rl = readline.createInterface({ input: stream });
@@ -64,12 +78,23 @@ export async function mergeLogs(files: vscode.Uri[]): Promise<{ lines: MergedLin
             const severityIndex = detectSeverity(line);
             const timestamp = extractTimestamp(line);
 
+            // collected.push({
+            //     text: line,
+            //     root,
+            //     fileIndex,
+            //     fileLineIndex,
+            //     severityIndex,
+            //     isFirst: false,
+            //     isLast: false
+            // });
+
             collected.push({
                 text: line,
                 root,
                 fileIndex,
                 fileLineIndex,
                 severityIndex,
+                timestamp,
                 isFirst: false,
                 isLast: false
             });
@@ -90,9 +115,18 @@ export async function mergeLogs(files: vscode.Uri[]): Promise<{ lines: MergedLin
     // Ordina tutte le righe per timestamp
     //
     allLines.sort((a, b) => {
+        
         const ta = extractTimestamp(a.text);
         const tb = extractTimestamp(b.text);
-        return ta - tb;
+        
+        // if (ta !== tb)
+            return ta - tb;
+
+        // if (a.fileIndex !== b.fileIndex)
+        //     return a.fileIndex - b.fileIndex;
+
+        // return a.fileLineIndex - b.fileLineIndex;
+
     });
 
     //

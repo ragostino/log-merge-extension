@@ -16,8 +16,15 @@ export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
 let mergedLines: MergedLine[] = [];
 
+const ambiguityDecorationType =
+    vscode.window.createTextEditorDecorationType({
+            //isWholeLine: true,
+            backgroundColor: 'rgba(128,128,255,0.06)'
+    });
+
 const boundaryDecorationType =
     vscode.window.createTextEditorDecorationType({});
+    
 
 const fileBaseColors: string[] = [
 
@@ -57,6 +64,53 @@ function getMarkerColor(fileIndex: number): string {
     return fileBaseColors[fileIndex % fileBaseColors.length];
 }
 
+function formatTimestamp(timestamp: number): string {
+
+    const d = new Date(timestamp);
+
+    const yyyy = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+
+    const HH = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    const mmm = String(d.getMilliseconds()).padStart(3, '0');
+
+    return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss},${mmm}`;
+}
+
+async function checkTheme() {
+    const currentTheme =
+        vscode.workspace
+            .getConfiguration('workbench')
+            .get<string>('colorTheme');
+
+    if (currentTheme !== 'Merged Log Theme') {
+
+        // vscode.window.showWarningMessage(
+        //     'Per visualizzare correttamente i colori dell\'unione log è consigliato il tema "Merged Log Theme".'
+        // );
+    
+            const result = await vscode.window.showInformationMessage(
+                'Per visualizzare correttamente i colori dei log è consigliato attivare il tema "Merged Log Theme".',
+                'Attiva tema',
+                'Ignora' );
+
+            if (result === 'Attiva tema') {
+                await vscode.workspace
+                .getConfiguration('workbench')
+                .update(
+                    'colorTheme',
+                    'Merged Log Theme',
+                    vscode.ConfigurationTarget.Global
+                );  
+            }
+        
+    }
+}
+
+
 //
 // 🔥 DECORATORI FILE BOUNDARY
 //
@@ -71,7 +125,7 @@ function applyFileBoundaryDecorators() {
 
         const prefix = info.isFirst ? "▶ " :
                        info.isLast  ? "◀ " :
-                                      "│ ";
+                                      "│  ";
 
         const color = getMarkerColor(info.fileIndex);
 
@@ -89,6 +143,62 @@ function applyFileBoundaryDecorators() {
 
     editor.setDecorations(boundaryDecorationType, decorations);
 }
+
+
+function applyTimestampAmbiguityDecorators() {
+
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return;
+    }
+
+    const decorations: vscode.DecorationOptions[] = [];
+
+    let start = 0;
+
+    while (start < mergedLines.length) {
+
+        const ts = mergedLines[start].timestamp;
+
+        let end = start;
+
+        while (
+            end + 1 < mergedLines.length &&
+            mergedLines[end + 1].timestamp === ts
+        ) {
+            end++;
+        }
+
+        const groupSize = end - start + 1;
+        
+        if (groupSize > 1) {
+            for (let line = start; line <= end; line++) {
+
+                decorations.push({
+                    range: new vscode.Range(
+                        line,
+                        0,
+                        line,
+                        editor.document.lineAt(line).text.length
+                    ),
+                    hoverMessage:
+                        `⚠ Gruppo temporale ambiguo\n\n` +
+                        `Eventi nel gruppo: ${groupSize}\n` +
+                        `Timestamp: ${formatTimestamp(ts)}\n\n` +
+                        `L'ordine causale potrebbe non essere determinabile.`
+                });
+            }
+        }
+
+        start = end + 1;
+    }
+
+    editor.setDecorations(
+        ambiguityDecorationType,
+        decorations
+    );
+}
+
 
 //
 // 🔥 PROVIDER SEMANTICO
@@ -139,7 +249,38 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (!files) return;
 
-            const result = await mergeLogs(files);
+            const result = await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: "Merging log files...",
+                    cancellable: false
+                },
+                async (progress) => {
+
+                    progress.report({
+                        message: `Reading ${files.length} files...`
+                    });
+
+                    const result = await mergeLogs(
+                        files,
+                        (current, total, fileName) => {
+
+                            progress.report({
+                                message: `Reading ${current}/${total}: ${fileName}`,
+                                increment: 100 / total
+                            });
+
+                        }
+                    );
+                    
+                    progress.report({
+                        message: "Building merged view..."
+                    });
+
+                    return result;
+                }
+            );
+
             mergedLines = result.lines;
 
             const uri = vscode.Uri.parse('untitled:merged-output');
@@ -151,8 +292,10 @@ export function activate(context: vscode.ExtensionContext) {
             await vscode.workspace.applyEdit(edit);
 
             await vscode.window.showTextDocument(doc);
+            await checkTheme();
 
             applyFileBoundaryDecorators();
+            applyTimestampAmbiguityDecorators();
         }
     );
 
