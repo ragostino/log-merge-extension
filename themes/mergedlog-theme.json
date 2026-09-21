@@ -1,0 +1,158 @@
+{
+  "name": "Merged Log Theme",
+  "type": "dark",
+  "colors": {},
+  "semanticTokenColors": {
+
+    "file0_sev0": "#B30000",
+    "file0_sev1": "#CC0000",
+    "file0_sev2": "#E60000",
+    "file0_sev3": "#FF0000",
+    "file0_sev4": "#FF3333",
+    "file0_sev5": "#FF6666",
+
+    "file1_sev0": "#B35900",
+    "file1_sev1": "#CC6D00",
+    "file1_sev2": "#E68200",
+    "file1_sev3": "#FF9900",
+    "file1_sev4": "#FFAD33",
+    "file1_sev5": "#FFC266",
+
+    "file2_sev0": "#B3B300",
+    "file2_sev1": "#CCCC00",
+    "file2_sev2": "#E6E600",
+    "file2_sev3": "#FFFF00",
+    "file2_sev4": "#FFFF33",
+    "file2_sev5": "#ffff66",
+
+    "file3_sev0": "#00B300",
+    "file3_sev1": "#00CC00",
+    "file3_sev2": "#00E600",
+    "file3_sev3": "#00ff00",
+    "file3_sev4": "#33ff33",
+    "file3_sev5": "#66ff66",
+
+    "file4_sev0": "#0099B3",
+    "file4_sev1": "#00ADCC",
+    "file4_sev2": "#00C2E6",
+    "file4_sev3": "#00DFFF",
+    "file4_sev4": "#33E8FF",
+    "file4_sev5": "#66F0FF",
+
+    "file5_sev0": "#0000B3",
+    "file5_sev1": "#0000CC",
+    "file5_sev2": "#0000E6",
+    "file5_sev3": "#0000FF",
+    "file5_sev4": "#3333FF",
+    "file5_sev5": "#6666FF",
+
+    "file6_sev0": "#6600B3",
+    "file6_sev1": "#7A00CC",
+    "file6_sev2": "#8F00E6",
+    "file6_sev3": "#A300FF",
+    "file6_sev4": "#B533FF",
+    "file6_sev5": "#C666FF",
+
+    "file7_sev0": "#B30059",
+    "file7_sev1": "#CC006D",
+    "file7_sev2": "#E60082",
+    "file7_sev3": "#FF0099",
+    "file7_sev4": "#FF33AD",
+    "file7_sev5": "#FF66C2",
+
+    "file8_sev0": "#B300B3",
+    "file8_sev1": "#CC00CC",
+    "file8_sev2": "#E600E6",
+    "file8_sev3": "#FF00FF",
+    "file8_sev4": "#FF33FF",
+    "file8_sev5": "#FF66FF",
+
+    "file9_sev0": "#B3007A",
+    "file9_sev1": "#CC0091",
+    "file9_sev2": "#E600A8",
+    "file9_sev3": "#FF00BF",
+    "file9_sev4": "#FF33CC",
+    "file9_sev5": "#FF66D9",
+
+    "file10_sev0": "#B32600",
+    "file10_sev1": "#CC2E00",
+    "file10_sev2": "#E63600",
+    "file10_sev3": "#FF3F00",
+    "file10_sev4": "#FF6633",
+    "file10_sev5": "#FF8C66",
+
+
+
+
+
+    "file11_sev0": "#FFF9E6",
+    "file11_sev1": "#FFFFFA",
+    "file11_sev2": "#FFE6E6",
+    "file11_sev3": "#FFFFFA",
+    "file11_sev4": "#FFFFFF",
+    "file11_sev5": "#E6FFE6",
+
+    "file12_sev0": "#FFFBEF",
+    "file12_sev1": "#FFFFFD",
+    "file12_sev2": "#FFEFEE",
+    "file12_sev3": "#FFFFFD",
+    "file12_sev4": "#FFFFFF",
+    "file12_sev5": "#EEFFEE",
+
+    "file13_sev0": "#FFFDF5",
+    "file13_sev1": "#FFFFFF",
+    "file13_sev2": "#FFF5F5",
+    "file13_sev3": "#FFFFFF",
+    "file13_sev4": "#FFFFFF",
+    "file13_sev5": "#F5FFF5",
+
+    "file14_sev0": "#FFFEFA",
+    "file14_sev1": "#FFFFFF",
+    "file14_sev2": "#FFFAFA",
+    "file14_sev3": "#FFFFFF",
+    "file14_sev4": "#FFFFFF",
+    "file14_sev5": "#FAFFFA",
+
+    "file15_sev0": "#FFFFFD",
+    "file15_sev1": "#FFFFFF",
+    "file15_sev2": "#FFFDFD",
+    "file15_sev3": "#FFFFFF",
+    "file15_sev4": "#FFFFFF",
+    "file15_sev5": "#FDFFFD",
+
+    "file16_sev0": "#FFFFFF",
+    "file16_sev1": "#FFFFFF",
+    "file16_sev2": "#FFFFFF",
+    "file16_sev3": "#FFFFFF",
+    "file16_sev4": "#FFFFFF",
+    "file16_sev5": "#FFFFFF",
+
+    "file17_sev0": "#FFFFFF",
+    "file17_sev1": "#FFFFFF",
+    "file17_sev2": "#FFFFFF",
+    "file17_sev3": "#FFFFFF",
+    "file17_sev4": "#FFFFFF",
+    "file17_sev5": "#FFFFFF",
+
+    "file18_sev0": "#FFFFFF",
+    "file18_sev1": "#FFFFFF",
+    "file18_sev2": "#FFFFFF",
+    "file18_sev3": "#FFFFFF",
+    "file18_sev4": "#FFFFFF",
+    "file18_sev5": "#FFFFFF",
+
+    "file19_sev0": "#FFFFFF",
+    "file19_sev1": "#FFFFFF",
+    "file19_sev2": "#FFFFFF",
+    "file19_sev3": "#FFFFFF",
+    "file19_sev4": "#FFFFFF",
+    "file19_sev5": "#FFFFFF",
+
+    "file20_sev0": "#FFFFFF",
+    "file20_sev1": "#FFFFFF",
+    "file20_sev2": "#FFFFFF",
+    "file20_sev3": "#FFFFFF",
+    "file20_sev4": "#FFFFFF",
+    "file20_sev5": "#FFFFFF"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Merged Log",
+  "scopeName": "source.mergedlog",
+  "patterns": [
+    {
+      "name": "meta.line.mergedlog",
+      "match": "^.*$"
+    }
+  ]
+}

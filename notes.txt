@@ -1,0 +1,44 @@
+
+const fileBaseColors: string[] = [
+
+    // ===== BLOCCO 1 - SATURI =====
+    "#FF0000", // Rosso
+    "#FF7F00", // Arancione
+    "#FFFF00", // Giallo
+    "#00FF00", // Verde
+    "#00FFFF", // Ciano
+    "#0000FF", // Blu
+    "#8B00FF", // Viola
+
+    // ===== BLOCCO 2 - SCURI =====
+    "#8B0000", // Rosso scuro
+    "#CC5500", // Arancione scuro
+    "#B8860B", // Giallo scuro
+    "#006400", // Verde scuro
+    "#008B8B", // Ciano scuro
+    "#00008B", // Blu scuro
+    "#4B0082", // Indaco
+
+    // ===== BLOCCO 3 - PASTELLO =====
+    "#FF6666", // Rosso pastello
+    "#FFB366", // Arancione pastello
+    "#FFFF99", // Giallo pastello
+    "#99FF99", // Verde pastello
+    "#99FFFF", // Ciano pastello
+    "#9999FF", // Blu pastello
+    "#D699FF"  // Viola pastello
+];
+
+
+I semantic token devono usare gli stessi 21 colori base e generare le 6 tonalità.
+
+Ti consiglio una regola fissa:
+
+Severity	Fattore
+sev0 FATAL	0.35
+sev1 ERROR	0.50
+sev2 WARN	0.65
+sev3 INFO	1.00
+sev4 DEBUG	1.20
+sev5 TRACE	1.40
+

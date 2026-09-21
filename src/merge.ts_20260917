@@ -1,0 +1,71 @@
+import * as vscode from 'vscode';
+
+export interface MergedLine {
+    fileIndex: number;
+    root: string;
+    severityIndex: number;
+}
+
+function extractRoot(filename: string): string {
+    return filename.replace(/[-_.]\d+.*$/, '').replace(/\..*$/, '');
+}
+
+function detectSeverity(line: string): number {
+    if (line.includes("FATAL")) return 0;
+    if (line.includes("ERROR")) return 1;
+    if (line.includes("WARN"))  return 2;
+    if (line.includes("INFO"))  return 3;
+    if (line.includes("DEBUG")) return 4;
+    return 5;
+}
+
+function extractTimestamp(line: string): Date | null {
+    const regex = /(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/;
+    const match = line.match(regex);
+    if (!match) return null;
+    return new Date(match[1]);
+}
+
+export async function mergeLogs(files: vscode.Uri[]): Promise<{ text: string, lines: MergedLine[] }> {
+
+    const allLines: {
+        timestamp: Date;
+        text: string;
+        fileIndex: number;
+        root: string;
+        severityIndex: number;
+    }[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+        const data = await vscode.workspace.fs.readFile(files[i]);
+        const content = Buffer.from(data).toString('utf8');
+
+        const root = extractRoot(files[i].path.split('/').pop()!);
+
+        const lines = content.split(/\r?\n/);
+
+        for (const line of lines) {
+            const ts = extractTimestamp(line);
+            if (!ts) continue;
+
+            allLines.push({
+                timestamp: ts,
+                text: line,
+                fileIndex: i,
+                root,
+                severityIndex: detectSeverity(line)
+            });
+        }
+    }
+
+    allLines.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    const text = allLines.map(l => l.text).join("\n");
+    const lines = allLines.map(l => ({
+        fileIndex: l.fileIndex,
+        root: l.root,
+        severityIndex: l.severityIndex
+    }));
+
+    return { text, lines };
+}
