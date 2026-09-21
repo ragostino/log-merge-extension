@@ -36,53 +36,7 @@
       }
     ],
 
-    "semanticTokenTypes": [
-      { "id": "file0_sev0" }, { "id": "file0_sev1" }, { "id": "file0_sev2" }, { "id": "file0_sev3" }, { "id": "file0_sev4" }, { "id": "file0_sev5" },
-      { "id": "file1_sev0" }, { "id": "file1_sev1" }, { "id": "file1_sev2" }, { "id": "file1_sev3" }, { "id": "file1_sev4" }, { "id": "file1_sev5" },
-      { "id": "file2_sev0" }, { "id": "file2_sev1" }, { "id": "file2_sev2" }, { "id": "file2_sev3" }, { "id": "file2_sev4" }, { "id": "file2_sev5" },
-      { "id": "file3_sev0" }, { "id": "file3_sev1" }, { "id": "file3_sev2" }, { "id": "file3_sev3" }, { "id": "file3_sev4" }, { "id": "file3_sev5" },
-      { "id": "file4_sev0" }, { "id": "file4_sev1" }, { "id": "file4_sev2" }, { "id": "file4_sev3" }, { "id": "file4_sev4" }, { "id": "file4_sev5" },
-      { "id": "file5_sev0" }, { "id": "file5_sev1" }, { "id": "file5_sev2" }, { "id": "file5_sev3" }, { "id": "file5_sev4" }, { "id": "file5_sev5" },
-      { "id": "file6_sev0" }, { "id": "file6_sev1" }, { "id": "file6_sev2" }, { "id": "file6_sev3" }, { "id": "file6_sev4" }, { "id": "file6_sev5" },
-      { "id": "file7_sev0" }, { "id": "file7_sev1" }, { "id": "file7_sev2" }, { "id": "file7_sev3" }, { "id": "file7_sev4" }, { "id": "file7_sev5" },
-      { "id": "file8_sev0" }, { "id": "file8_sev1" }, { "id": "file8_sev2" }, { "id": "file8_sev3" }, { "id": "file8_sev4" }, { "id": "file8_sev5" },
-      { "id": "file9_sev0" }, { "id": "file9_sev1" }, { "id": "file9_sev2" }, { "id": "file9_sev3" }, { "id": "file9_sev4" }, { "id": "file9_sev5" },
-      { "id": "file10_sev0" }, { "id": "file10_sev1" }, { "id": "file10_sev2" }, { "id": "file10_sev3" }, { "id": "file10_sev4" }, { "id": "file10_sev5" },
-      { "id": "file11_sev0" }, { "id": "file11_sev1" }, { "id": "file11_sev2" }, { "id": "file11_sev3" }, { "id": "file11_sev4" }, { "id": "file11_sev5" },
-      { "id": "file12_sev0" }, { "id": "file12_sev1" }, { "id": "file12_sev2" }, { "id": "file12_sev3" }, { "id": "file12_sev4" }, { "id": "file12_sev5" },
-      { "id": "file13_sev0" }, { "id": "file13_sev1" }, { "id": "file13_sev2" }, { "id": "file13_sev3" }, { "id": "file13_sev4" }, { "id": "file13_sev5" },
-      { "id": "file14_sev0" }, { "id": "file14_sev1" }, { "id": "file14_sev2" }, { "id": "file14_sev3" }, { "id": "file14_sev4" }, { "id": "file14_sev5" },
-      { "id": "file15_sev0" }, { "id": "file15_sev1" }, { "id": "file15_sev2" }, { "id": "file15_sev3" }, { "id": "file15_sev4" }, { "id": "file15_sev5" },
-      { "id": "file16_sev0" }, { "id": "file16_sev1" }, { "id": "file16_sev2" }, { "id": "file16_sev3" }, { "id": "file16_sev4" }, { "id": "file16_sev5" },
-      { "id": "file17_sev0" }, { "id": "file17_sev1" }, { "id": "file17_sev2" }, { "id": "file17_sev3" }, { "id": "file17_sev4" }, { "id": "file17_sev5" },
-      { "id": "file18_sev0" }, { "id": "file18_sev1" }, { "id": "file18_sev2" }, { "id": "file18_sev3" }, { "id": "file18_sev4" }, { "id": "file18_sev5" },
-      { "id": "file19_sev0" }, { "id": "file19_sev1" }, { "id": "file19_sev2" }, { "id": "file19_sev3" }, { "id": "file19_sev4" }, { "id": "file19_sev5" }
-    ],
-
     "semanticHighlighting": true,
-
-    "semanticTokenColors": {
-      "file1_sev0": { "foreground": "#FF3300" },
-      "file1_sev1": { "foreground": "#FF8800" },
-      "file1_sev2": { "foreground": "#FF0000" },
-      "file1_sev3": { "foreground": "#FF7F00" },
-      "file1_sev4": { "foreground": "#FFFF00" },
-      "file1_sev5": { "foreground": "#00FF00" }
-    },
-
-    "semanticTokenScopes": [
-      {
-        "language": "mergedlog",
-        "scopes": {
-          "file1_sev0": ["file1_sev0"],
-          "file1_sev1": ["file1_sev1"],
-          "file1_sev2": ["file1_sev2"],
-          "file1_sev3": ["file1_sev3"],
-          "file1_sev4": ["file1_sev4"],
-          "file1_sev5": ["file1_sev5"]
-        }
-      }
-    ],
 
     "configurationDefaults": {
       "[mergedlog]": {
@@ -98,18 +52,7 @@
     ]
 
   },
-  "colors": {
-    "editor.tokenColorCustomizations": {
-      "semanticTokenColors": {
-        "file1_sev0": "#FF3300",
-        "file1_sev1": "#FF8800",
-        "file1_sev2": "#FF0000",
-        "file1_sev3": "#FF7F00",
-        "file1_sev4": "#FFFF00",
-        "file1_sev5": "#00FF00"
-      }
-    }
-  },
+  
 
   "scripts": {
     "compile": "tsc -p ./",

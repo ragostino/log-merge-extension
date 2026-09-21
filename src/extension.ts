@@ -16,6 +16,9 @@ export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
 let mergedLines: MergedLine[] = [];
 
+const boundaryDecorationType =
+    vscode.window.createTextEditorDecorationType({});
+
 const fileBaseColors: string[] = [
 
     // ===== BLOCCO 1 - SATURI =====
@@ -46,44 +49,10 @@ const fileBaseColors: string[] = [
     "#D699FF"  // Viola pastello
 ];
 
-const fileBaseColors1: string[] = [
-    "#FF3300", // file0
-    "#FF8800", // file1
-    "#FF0000", // file2
-    "#FF7F00", // file3
-    "#FFFF00", // file4
-    "#00FF00", // file5
-    "#00FFFF", // file6
-    "#0080FF", // file7
-    "#0000FF", // file8
-    "#8000FF", // file9
-    "#FF00FF", // file10
-    "#FF0080", // file11
-    "#FF6666", // file12
-    "#FFCC00", // file13
-    "#CCFF00", // file14
-    "#00FFCC", // file15
-    "#0099FF", // file16
-    "#6600FF", // file17
-    "#CC00FF", // file18
-    "#FF0066"  // file19
-];
-
-const fileBaseColors2: string[] = [
-    "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#4B0082", "#8A2BE2",
-    "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#4B0082", "#8A2BE2",
-    "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#4B0082", "#8A2BE2",
-    "#FF00FF", "#FF1493", "#00BFFF", "#7FFF00", "#FFD700", "#FF4500", "#2E8B57",
-    "#708090", "#8B4513", "#556B2F", "#9932CC", "#DC143C", "#20B2AA", "#2E8B57",
-];
 
 //
 // 🔥 TABELLA COLORI (duplicata dal tema mergedlog-theme.json)
 //
-/*
-function getMarkerColor(fileIndex: number): string {
-    return fileBaseColors[fileIndex] ?? "#FFFFFF";
-} */
 function getMarkerColor(fileIndex: number): string {
     return fileBaseColors[fileIndex % fileBaseColors.length];
 }
@@ -118,8 +87,7 @@ function applyFileBoundaryDecorators() {
         });
     }
 
-    const decorationType = vscode.window.createTextEditorDecorationType({});
-    editor.setDecorations(decorationType, decorations);
+    editor.setDecorations(boundaryDecorationType, decorations);
 }
 
 //
