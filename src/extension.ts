@@ -16,7 +16,10 @@ tokenTypesLegend.forEach((t, i) => tokenTypes.set(t, i));
 export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
 let currentSeverityFilter = "ALL";
+let selectedFiles = new Set<string>();
+
 let filterStatusBarItem: vscode.StatusBarItem;
+let fileFilterStatusBarItem: vscode.StatusBarItem;
 
 let mergedLines: MergedLine[] = [];
 let allMergedLines: MergedLine[] = [];
@@ -226,7 +229,14 @@ async function applySeverityFilter() {
     }
 
     currentSeverityFilter = selected;
-    filterStatusBarItem.text = `$(filter) ${currentSeverityFilter}+`;
+    filterStatusBarItem.text = selected === 'ALL'
+                                    ? '$(filter) ALL'
+                                    : `$(filter) ${selected}+`;
+    filterStatusBarItem.tooltip =
+                                selected === 'ALL'
+                                    ? 'Filtro severità: tutte le righe'
+                                    : `Filtro severità: ${selected}+`;
+
 
     const thresholds: Record<string, number> = {
         FATAL: 0,
@@ -237,20 +247,101 @@ async function applySeverityFilter() {
         TRACE: 5
     };
 
-    if (selected === 'ALL') {
-        mergedLines = [...allMergedLines];
+    // if (selected === 'ALL') {
+    //     mergedLines = [...allMergedLines];
 
-    } else {
+    // } else {
 
-        const threshold = thresholds[selected];
-        mergedLines =
-            allMergedLines.filter(
-                l => l.severityIndex <= threshold
-            );
+    //     const threshold = thresholds[selected];
+    //     mergedLines =
+    //         allMergedLines.filter(
+    //             l => l.severityIndex <= threshold
+    //         );
+    // }
+
+    // await rebuildMergedDocument();
+
+    applyCurrentFilters();
+}
+
+async function applyFileFilter() {
+
+    const allFiles =
+        [...new Set(
+            allMergedLines.map(
+                l => l.root
+            )
+        )].sort();
+
+    const picks =
+        allFiles.map(file => ({
+            label: file,
+            picked:
+                selectedFiles.size === 0 ||
+                selectedFiles.has(file)
+        }));
+
+    const selected =
+        await vscode.window.showQuickPick(
+            picks,
+            {
+                canPickMany: true,
+                title: 'Select files'
+            }
+        );
+
+    if (!selected) {
+        return;
     }
 
-    await rebuildMergedDocument();
+    selectedFiles =
+        new Set(
+            selected.map(
+                item => item.label
+            )
+        );
+
+    fileFilterStatusBarItem.text =
+        selectedFiles.size === allFiles.length
+            ? '$(files) ALL'
+            : `$(files) ${selectedFiles.size}/${allFiles.length}`;
+
+    applyCurrentFilters();
 }
+
+function applyCurrentFilters() {
+
+    const thresholds: Record<string, number> = {
+        FATAL: 0,
+        ERROR: 1,
+        WARN: 2,
+        INFO: 3,
+        DEBUG: 4,
+        TRACE: 5
+    };
+
+    mergedLines = allMergedLines.filter(line => {
+
+        if (
+            selectedFiles.size > 0 &&
+            !selectedFiles.has(line.root)
+        ) {
+            return false;
+        }
+
+        if (currentSeverityFilter === 'ALL') {
+            return true;
+        }
+
+        const threshold =
+            thresholds[currentSeverityFilter];
+
+        return line.severityIndex <= threshold;
+    });
+
+    rebuildMergedDocument();
+}
+
 
 async function rebuildMergedDocument() {
 
@@ -341,7 +432,19 @@ export function activate(context: vscode.ExtensionContext) {
     filterStatusBarItem.command = "logMerge.filterSeverity";
     filterStatusBarItem.show();
 
+    fileFilterStatusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        99
+    );
     context.subscriptions.push(filterStatusBarItem);
+
+    fileFilterStatusBarItem.text = "$(files) ALL";
+    fileFilterStatusBarItem.tooltip = "Filtro file attivo";
+    fileFilterStatusBarItem.command = "logMerge.filterFiles";
+    fileFilterStatusBarItem.show();
+
+    context.subscriptions.push( fileFilterStatusBarItem);
+
 
     const disposable = vscode.commands.registerCommand(
         'logMerge.mergeLogs',
@@ -378,7 +481,7 @@ export function activate(context: vscode.ExtensionContext) {
                     );
                     
                     progress.report({
-                        message: "Building merged view..."
+                        message: `Building merged view (${result.lines.length} lines)...`
                     });
 
                     return result;
@@ -390,13 +493,17 @@ export function activate(context: vscode.ExtensionContext) {
             allMergedLines = result.lines;
             mergedLines = [...allMergedLines];
 
+            selectedFiles = new Set( allMergedLines.map( l => l.root ) );
 
             const uri = vscode.Uri.parse('untitled:merged-output');
             let doc = await vscode.workspace.openTextDocument(uri);
             await vscode.languages.setTextDocumentLanguage(doc, 'mergedlog');
 
             const edit = new vscode.WorkspaceEdit();
-            edit.insert(uri, new vscode.Position(0, 0), result.text);
+            if (doc.getText().length > 0)
+                edit.replace(uri, new vscode.Range(0, 0, doc.lineCount, 0), result.text);
+            else
+                edit.insert(uri, new vscode.Position(0, 0), result.text);
             await vscode.workspace.applyEdit(edit);
 
             await vscode.window.showTextDocument(doc);
@@ -435,6 +542,13 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'logMerge.filterSeverity',
             applySeverityFilter
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'logMerge.filterFiles',
+            applyFileFilter
         )
     );
 }

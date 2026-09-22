@@ -4,6 +4,7 @@
   "description": "Unisce più file di log ordinandoli per timestamp, colorando per file e gravità, e marcando inizio/fine file.",
   "version": "0.0.1",
   "publisher": "roberto",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -56,6 +57,10 @@
       {
         "command": "logMerge.filterSeverity",
         "title": "Log Merge: Filter Severity"
+      },
+      {
+        "command": "logMerge.filterFiles",
+        "title": "Log Merge: Filter Files"
       }
     ]
 
@@ -64,6 +69,7 @@
   "files": [
       "out/**",
       "themes/**",
+      "images/**",
       "syntaxes/**",
       "package.json",
       "readme.md",
