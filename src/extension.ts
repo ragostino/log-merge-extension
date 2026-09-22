@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { mergeLogs, MergedLine } from './merge';
 
 
+const MAX_DECORATED_LINES = 50000;
+const MAX_AMBIGUITY_LINES = 20000;
+
 //
 // 🔥 120 TOKEN SEMANTICI: file0_sev0 … file19_sev5
 //
@@ -15,8 +18,14 @@ tokenTypesLegend.forEach((t, i) => tokenTypes.set(t, i));
 
 export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
+let mergedDocument: vscode.TextDocument | undefined;
+
+let rebuilding = false;
 let currentSeverityFilter = "ALL";
+let selectedFiles = new Set<string>();
+
 let filterStatusBarItem: vscode.StatusBarItem;
+let fileFilterStatusBarItem: vscode.StatusBarItem;
 
 let mergedLines: MergedLine[] = [];
 let allMergedLines: MergedLine[] = [];
@@ -123,6 +132,13 @@ function applyFileBoundaryDecorators() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
+    if (mergedLines.length > MAX_DECORATED_LINES) {
+       console.log("Skipping decorators, too many lines");
+       return;
+    }
+
+    console.time("boundary");
+
     const decorations: vscode.DecorationOptions[] = [];
 
     for (let i = 0; i < mergedLines.length; i++) {
@@ -147,16 +163,36 @@ function applyFileBoundaryDecorators() {
     }
 
     editor.setDecorations(boundaryDecorationType, decorations);
+    console.timeEnd("boundary");
 }
 
 
 function applyTimestampAmbiguityDecorators() {
-
+    
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         return;
     }
 
+    if (mergedLines.length > MAX_AMBIGUITY_LINES) {
+
+        console.log(
+            `Skipping ambiguity decorators (${mergedLines.length} lines)`
+        );
+
+        const editor = vscode.window.activeTextEditor;
+
+        if (editor) {
+            editor.setDecorations(
+                ambiguityDecorationType,
+                []
+            );
+        }
+
+        return;
+    }
+
+    console.time("ambiguity");
     const decorations: vscode.DecorationOptions[] = [];
 
     let start = 0;
@@ -177,22 +213,20 @@ function applyTimestampAmbiguityDecorators() {
         const groupSize = end - start + 1;
         
         if (groupSize > 1) {
-            for (let line = start; line <= end; line++) {
 
-                decorations.push({
-                    range: new vscode.Range(
-                        line,
-                        0,
-                        line,
-                        editor.document.lineAt(line).text.length
-                    ),
-                    hoverMessage:
-                        `⚠ Gruppo temporale ambiguo\n\n` +
-                        `Eventi nel gruppo: ${groupSize}\n` +
-                        `Timestamp: ${formatTimestamp(ts)}\n\n` +
-                        `L'ordine causale potrebbe non essere determinabile.`
-                });
-            }
+            decorations.push({
+                range: new vscode.Range(
+                    start,
+                    0,
+                    end,
+                    editor.document.lineAt(end).text.length
+                ),
+                hoverMessage:
+                    `⚠ Gruppo temporale ambiguo\n\n` +
+                    `Eventi nel gruppo: ${groupSize}\n` +
+                    `Timestamp: ${formatTimestamp(ts)}\n\n` +
+                    `L'ordine causale potrebbe non essere determinabile.`
+            });
         }
 
         start = end + 1;
@@ -202,6 +236,88 @@ function applyTimestampAmbiguityDecorators() {
         ambiguityDecorationType,
         decorations
     );
+
+    console.timeEnd("ambiguity");
+}
+
+function applyTimestampAmbiguityDecorators0() {
+    
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return;
+    }
+
+    if (mergedLines.length > MAX_DECORATED_LINES) {
+       console.log("Skipping decorators, too many lines");
+       return;
+    }
+    
+    console.time("ambiguity");
+    const decorations: vscode.DecorationOptions[] = [];
+
+    let start = 0;
+
+    while (start < mergedLines.length) {
+
+        const ts = mergedLines[start].timestamp;
+
+        let end = start;
+
+        while (
+            end + 1 < mergedLines.length &&
+            mergedLines[end + 1].timestamp === ts
+        ) {
+            end++;
+        }
+
+        const groupSize = end - start + 1;
+        
+        if (groupSize > 1) {
+
+            decorations.push({
+                range: new vscode.Range(
+                    start,
+                    0,
+                    end,
+                    editor.document.lineAt(end).text.length
+                ),
+                hoverMessage:
+                    `⚠ Gruppo temporale ambiguo\n\n` +
+                    `Eventi nel gruppo: ${groupSize}\n` +
+                    `Timestamp: ${formatTimestamp(ts)}\n\n` +
+                    `L'ordine causale potrebbe non essere determinabile.`
+            });
+
+        }
+
+        // if (groupSize > 2) {
+        //     for (let line = start; line <= end; line++) {
+
+        //         decorations.push({
+        //             range: new vscode.Range(
+        //                 start,
+        //                 0,
+        //                 end,
+        //                 editor.document.lineAt(end).text.length
+        //             ),
+        //             hoverMessage:
+        //                 `⚠ Gruppo temporale ambiguo\n\n` +
+        //                 `Eventi nel gruppo: ${groupSize}\n` +
+        //                 `Timestamp: ${formatTimestamp(ts)}\n\n` +
+        //                 `L'ordine causale potrebbe non essere determinabile.`
+        //         });
+        //     }
+        // }
+
+        start = end + 1;
+    }
+
+    editor.setDecorations(
+        ambiguityDecorationType,
+        decorations
+    );
+
+    console.timeEnd("ambiguity");
 }
 
 async function applySeverityFilter() {
@@ -226,7 +342,113 @@ async function applySeverityFilter() {
     }
 
     currentSeverityFilter = selected;
-    filterStatusBarItem.text = `$(filter) ${currentSeverityFilter}+`;
+    filterStatusBarItem.text = selected === 'ALL'
+                                    ? '$(filter) ALL'
+                                    : `$(filter) ${selected}+`;
+    filterStatusBarItem.tooltip =
+                                selected === 'ALL'
+                                    ? 'Filtro severità: tutte le righe'
+                                    : `Filtro severità: ${selected}+`;
+
+
+    // const thresholds: Record<string, number> = {
+    //     FATAL: 0,
+    //     ERROR: 1,
+    //     WARN: 2,
+    //     INFO: 3,
+    //     DEBUG: 4,
+    //     TRACE: 5
+    // };
+
+    // if (selected === 'ALL') {
+    //     mergedLines = [...allMergedLines];
+
+    // } else {
+
+    //     const threshold = thresholds[selected];
+    //     mergedLines =
+    //         allMergedLines.filter(
+    //             l => l.severityIndex <= threshold
+    //         );
+    // }
+
+    // await rebuildMergedDocument();
+
+    await applyCurrentFilters();
+}
+
+async function applyFileFilter() {
+
+    console.log("FILTER FILE");
+
+    const allFiles =
+        [...new Set(
+            allMergedLines.map(
+                l => l.root
+            )
+        )].sort();
+
+    const picks =
+        allFiles.map(file => ({
+            label: file,
+            picked:
+                selectedFiles.size === 0 ||
+                selectedFiles.has(file)
+        }));
+
+    const selected =
+        await vscode.window.showQuickPick(
+            picks,
+            {
+                canPickMany: true,
+                title: 'Select files'
+            }
+        );
+
+    if (!selected) {
+        return;
+    }
+
+    selectedFiles =
+        new Set(
+            selected.map(
+                item => item.label
+            )
+        );
+
+    fileFilterStatusBarItem.text =
+        selectedFiles.size === allFiles.length
+            ? '$(files) ALL'
+            : `$(files) ${selectedFiles.size}/${allFiles.length}`;
+
+    // fileFilterStatusBarItem.tooltip =
+    //     selectedFiles.size === allFiles.length
+    //         ? "Filtro file: tutti"
+    //         : [...selectedFiles].join("\n");
+
+    fileFilterStatusBarItem.tooltip = `File selezionati: ${selectedFiles.size}/${allFiles.length}`;
+
+    await applyCurrentFilters();
+}
+
+async function applyCurrentFilters() {
+
+    console.log("APPLY FILTERS START");
+
+    console.log(
+        "Severity:",
+        currentSeverityFilter
+    );
+
+    console.log(
+        "Selected files:",
+        selectedFiles.size
+    );
+
+    console.log(
+        "Before filter:",
+        allMergedLines.length
+    );
 
     const thresholds: Record<string, number> = {
         FATAL: 0,
@@ -237,60 +459,110 @@ async function applySeverityFilter() {
         TRACE: 5
     };
 
-    if (selected === 'ALL') {
-        mergedLines = [...allMergedLines];
+    mergedLines = allMergedLines.filter(line => {
 
-    } else {
+        if (
+            selectedFiles.size > 0 &&
+            !selectedFiles.has(line.root)
+        ) {
+            return false;
+        }
 
-        const threshold = thresholds[selected];
-        mergedLines =
-            allMergedLines.filter(
-                l => l.severityIndex <= threshold
-            );
-    }
+        if (currentSeverityFilter === 'ALL') {
+            return true;
+        }
 
+        const threshold = thresholds[currentSeverityFilter];
+
+        return line.severityIndex <= threshold;
+    });
+
+    console.log(
+        "After filter:",
+        mergedLines.length
+    );
+
+    console.log(
+        "SEVERITY SAMPLE",
+        allMergedLines
+            .slice(0, 20)
+            .map(l => l.severityIndex)
+    );
+    
     await rebuildMergedDocument();
+
+    console.log("APPLY FILTERS END");
 }
+
 
 async function rebuildMergedDocument() {
 
-    const text =
-        mergedLines
-            .map(l => l.text)
-            .join('\n');
+    if (rebuilding) {
+        return;
+    }
 
-    const uri =
-        vscode.Uri.parse('untitled:merged-output');
+    rebuilding = true;
 
-    const doc =
-        await vscode.workspace.openTextDocument(uri);
+    try {
 
-    await vscode.languages.setTextDocumentLanguage(
-        doc,
-        'mergedlog'
-    );
-
-    const edit = new vscode.WorkspaceEdit();
-
-    const fullRange = new vscode.Range(
-        doc.positionAt(0),
-        doc.positionAt(doc.getText().length)
-    );
-
-    edit.replace(
-        uri,
-        fullRange,
-        text
-    );
+        console.log("REBUILD START");
+        console.log(
+            "Rebuild lines:",
+            mergedLines.length
+        );
 
 
-    await vscode.workspace.applyEdit(edit);
+        const text = mergedLines
+                .map(l => l.text)
+                .join('\n');
 
-    await vscode.window.showTextDocument(doc);
+        const uri = vscode.Uri.parse('untitled:merged-output');
 
-    applyFileBoundaryDecorators();
-    applyTimestampAmbiguityDecorators();
+        console.log("OPEN DOCUMENT");
+        // const doc = await vscode.workspace.openTextDocument(uri);
+        if (!mergedDocument) {
+            return;
+        }
+        const doc = mergedDocument;
+
+        await vscode.languages.setTextDocumentLanguage(
+            doc,
+            'mergedlog'
+        );
+
+        const edit = new vscode.WorkspaceEdit();
+
+        const fullRange = new vscode.Range(
+            doc.positionAt(0),
+            doc.positionAt(doc.getText().length)
+        );
+
+        edit.replace(
+            uri,
+            fullRange,
+            text
+        );
+
+        console.time("replace");
+        await vscode.workspace.applyEdit(edit);
+        console.timeEnd("replace");
+        
+        // console.log("SHOW DOCUMENT");
+        // const editor = vscode.window.activeTextEditor;
+        // if (!editor || editor.document !== doc) {
+        //     await vscode.window.showTextDocument(doc);
+        // }
+        
+        applyFileBoundaryDecorators();
+        applyTimestampAmbiguityDecorators();
+        console.log("REBUILD END");
+    
+    } finally {
+        rebuilding = false;
+    }
 }
+
+
 
 //
 // 🔥 PROVIDER SEMANTICO
@@ -301,6 +573,7 @@ class LogSemanticTokenProvider implements vscode.DocumentSemanticTokensProvider 
         document: vscode.TextDocument
     ): vscode.ProviderResult<vscode.SemanticTokens> {
 
+        console.time("semantic");
         const builder = new vscode.SemanticTokensBuilder(legend);
 
         for (let line = 0; line < document.lineCount; line++) {
@@ -322,7 +595,10 @@ class LogSemanticTokenProvider implements vscode.DocumentSemanticTokensProvider 
             }
         }
 
-        return builder.build();
+        const result = builder.build();
+        console.timeEnd("semantic");
+
+        return result;
     }
 }
 
@@ -341,7 +617,19 @@ export function activate(context: vscode.ExtensionContext) {
     filterStatusBarItem.command = "logMerge.filterSeverity";
     filterStatusBarItem.show();
 
+    fileFilterStatusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        99
+    );
     context.subscriptions.push(filterStatusBarItem);
+
+    fileFilterStatusBarItem.text = "$(files) ALL";
+    fileFilterStatusBarItem.tooltip = "Filtro file attivo";
+    fileFilterStatusBarItem.command = "logMerge.filterFiles";
+    fileFilterStatusBarItem.show();
+
+    context.subscriptions.push( fileFilterStatusBarItem);
+
 
     const disposable = vscode.commands.registerCommand(
         'logMerge.mergeLogs',
@@ -378,7 +666,7 @@ export function activate(context: vscode.ExtensionContext) {
                     );
                     
                     progress.report({
-                        message: "Building merged view..."
+                        message: `Building merged view (${result.lines.length} lines)...`
                     });
 
                     return result;
@@ -390,13 +678,34 @@ export function activate(context: vscode.ExtensionContext) {
             allMergedLines = result.lines;
             mergedLines = [...allMergedLines];
 
+            currentSeverityFilter = "ALL";
+
+            filterStatusBarItem.text = "$(filter) ALL";
+            filterStatusBarItem.tooltip =
+                "Filtro severità: tutte le righe";
+
+            fileFilterStatusBarItem.text =
+                "$(files) ALL";
+
+            fileFilterStatusBarItem.tooltip =
+                "Filtro file: tutti";
+
+            selectedFiles = new Set( allMergedLines.map( l => l.root ) );
 
             const uri = vscode.Uri.parse('untitled:merged-output');
-            let doc = await vscode.workspace.openTextDocument(uri);
+            // let doc = await vscode.workspace.openTextDocument(uri);
+            if (!mergedDocument) {
+                mergedDocument = await vscode.workspace.openTextDocument(uri);
+            }
+            const doc = mergedDocument;
+            
             await vscode.languages.setTextDocumentLanguage(doc, 'mergedlog');
 
             const edit = new vscode.WorkspaceEdit();
-            edit.insert(uri, new vscode.Position(0, 0), result.text);
+            if (doc.getText().length > 0)
+                edit.replace(uri, new vscode.Range(0, 0, doc.lineCount, 0), result.text);
+            else
+                edit.insert(uri, new vscode.Position(0, 0), result.text);
             await vscode.workspace.applyEdit(edit);
 
             await vscode.window.showTextDocument(doc);
@@ -435,6 +744,13 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'logMerge.filterSeverity',
             applySeverityFilter
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'logMerge.filterFiles',
+            applyFileFilter
         )
     );
 }

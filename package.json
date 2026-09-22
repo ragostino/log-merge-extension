@@ -56,6 +56,10 @@
       {
         "command": "logMerge.filterSeverity",
         "title": "Log Merge: Filter Severity"
+      },
+      {
+        "command": "logMerge.filterFiles",
+        "title": "Log Merge: Filter Files"
       }
     ]
 
