@@ -59,6 +59,8 @@ This helps identify situations where:
 
 An informative tooltip explains the ambiguity.
 
+To preserve responsiveness on very large datasets, ambiguity highlighting may be automatically limited.
+
 ---
 
 ### Severity Filtering
@@ -80,7 +82,7 @@ Examples:
 | WARN | WARN, ERROR, FATAL |
 | ERROR | ERROR, FATAL |
 
-The current filter is shown in the VS Code status bar.
+The current severity filter is displayed in the VS Code status bar and is applied dynamically without reloading log files.
 
 ---
 
@@ -91,6 +93,24 @@ Dynamically include or exclude files from the merged view.
 Useful when analyzing large datasets containing many log sources.
 
 Selected files can be changed at any time without reloading the logs.
+
+The current file selection is displayed in the VS Code status bar.
+
+Source file filtering and severity filtering can be combined.
+
+---
+
+### Live Statistics
+
+The extension continuously displays the number of visible log entries versus the total number of loaded log entries.
+
+Example:
+
+```text
+7,336 / 114,476
+```
+
+This provides immediate feedback about the impact of active filters.
 
 ---
 
@@ -162,6 +182,20 @@ Log Merge: Filter Files
 
 ---
 
+## Status Bar Indicators
+
+The extension provides real-time status information.
+
+| Indicator | Description |
+|------------|------------|
+| Filter | Active severity filter |
+| Files | Selected files / total files |
+| Lines | Visible log lines / total log lines |
+
+These indicators are updated automatically after every merge and filtering operation.
+
+---
+
 ## Recommended Theme
 
 The extension includes a dedicated theme:
@@ -174,11 +208,83 @@ The extension will suggest enabling it to obtain the best visual experience.
 
 ---
 
+## Custom Timestamp Patterns
+
+The extension first tries its built-in timestamp parser.
+
+If no timestamp is detected, additional user-defined regular expressions are evaluated sequentially until a matching pattern is found.
+
+Patterns are evaluated in the configured order.
+
+The first matching expression is used.
+
+Example:
+
+```json
+{
+    "logMerge.timestampPatterns": [
+        "(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}),(\\d{3})",
+        "(\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\.(\\d{3})"
+    ]
+}
+```
+
+Each expression must provide:
+
+- Capture group 1: date and time
+- Capture group 2: milliseconds
+
+---
+
 ## Typical Use Cases
 
 - Telecom troubleshooting
 - Distributed applications
 - REST API diagnostics
-- HTTP/S and JWT 
+- HTTP/S and JWT analysis
+- Microservice investigations
+- Multi-threaded applications
+- Integration debugging
+- Production incident analysis
+- Distributed system correlation
+- Performance and timing analysis
 
+---
+
+## Example Workflow
+
+1. Open multiple log files.
+2. Execute **Merge Logs**.
+3. Inspect the unified timeline.
+4. Apply severity filtering.
+5. Reduce the view to relevant files.
+6. Investigate timestamp ambiguity groups when present.
+7. Use hover information to locate the original source line.
+
+---
+
+## Limitations
+
+The extension relies on timestamp information available in log files.
+
+When multiple events share exactly the same timestamp, their true execution order may not be determinable.
+
+In these situations, the extension highlights the affected log entries to alert the analyst.
+
+Custom timestamp patterns currently require:
+
+- Capture group 1 = date and time
+- Capture group 2 = milliseconds
+
+---
+
+## Version
+
+Current version: 0.0.1
+
+---
+
+## License
+
+MIT License
 

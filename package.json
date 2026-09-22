@@ -8,6 +8,7 @@
   "engines": {
     "vscode": "^1.90.0"
   },
+
   "repository": {
     "type": "git",
     "url": "https://github.com/ragostino/log-merge-extension.git"
@@ -16,6 +17,19 @@
   "main": "./out/extension.js",
 
   "contributes": {
+    
+    "configuration": {
+      "title": "Log Merge",
+      "properties": {
+        "logMerge.timestampPatterns": {
+          "type": "array",
+          "default": [
+            "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}"
+          ],
+          "description": "Ordered list of timestamp regular expressions."
+        }
+      }
+    },
 
     "themes": [
         {
@@ -62,8 +76,12 @@
         "command": "logMerge.filterFiles",
         "title": "Log Merge: Filter Files"
       }
+    ],
+    
+    "categories": [
+      "Other",
+      "Debuggers"
     ]
-
   },
 
   "files": [

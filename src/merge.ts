@@ -2,6 +2,13 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as readline from 'readline';
 
+const patterns = vscode.workspace
+        .getConfiguration("logMerge")
+        .get<string[]>(
+            "timestampPatterns",
+            []
+        );
+
 //
 // Struttura dati usata da extension.ts
 //
@@ -33,13 +40,93 @@ function detectSeverity(line: string): number {
 // Estrae timestamp iniziale della riga
 //
 function extractTimestamp(line: string): number {
+
+    let match =
+        line.match(
+            /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})/
+        );
+
+    if (!match) {
+        match =
+            tryCustomTimestampPatterns(line);
+    }
+
+    if (!match) {
+        return 0;
+    }
+
+    const [_, datePart, msPart] = match;
+
+    return new Date(
+        datePart.replace(" ", "T") +
+        "." +
+        msPart +
+        "Z"
+    ).getTime();
+}
+
+
+function extractTimestamp0(line: string): number {
     // Formato: 2026-09-15 00:00:00,877
-    const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})/);
-    if (!match) return 0;
+    let match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})/);
+    if ( match) {
+        const [_, datePart, msPart] = match;
+        const date = new Date(datePart.replace(" ", "T") + "." + msPart + "Z");
+        return date.getTime();
+    }
+    
+    match = tryCustomTimestampPatterns(line);
+      
+    if (!match) { return 0; }
 
     const [_, datePart, msPart] = match;
     const date = new Date(datePart.replace(" ", "T") + "." + msPart + "Z");
     return date.getTime();
+
+}
+
+function tryCustomTimestampPatterns(
+    line: string
+): RegExpMatchArray | null {
+
+    for (let i = 0; i < patterns.length; i++) {
+
+        const pattern = patterns[i];
+
+        const regex =
+            new RegExp(pattern);
+
+        const match =
+            line.match(regex);
+
+        if (match) {
+
+            console.log(
+                `Timestamp matched using custom pattern #${i + 1}`
+            );
+
+            return match;
+        }
+    }
+
+    return null;
+}
+
+function tryCustomTimestampPatterns0(
+    line: string
+): RegExpMatchArray | null {
+
+    for (const pattern of patterns) {
+        const regex = new RegExp(pattern);
+        const match = line.match(regex);
+
+        if (match) {
+            console.log( `Timestamp matched using custom pattern #${pattern}`);
+            return match;
+        }        
+    }
+
+    return null;
 }
 
 //
