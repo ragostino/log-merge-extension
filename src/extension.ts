@@ -26,6 +26,7 @@ let selectedFiles = new Set<string>();
 
 let filterStatusBarItem: vscode.StatusBarItem;
 let fileFilterStatusBarItem: vscode.StatusBarItem;
+let lineCountStatusBarItem: vscode.StatusBarItem;
 
 let mergedLines: MergedLine[] = [];
 let allMergedLines: MergedLine[] = [];
@@ -489,6 +490,9 @@ async function applyCurrentFilters() {
             .map(l => l.severityIndex)
     );
     
+
+    updateLineCounter();
+    
     await rebuildMergedDocument();
 
     console.log("APPLY FILTERS END");
@@ -561,7 +565,14 @@ async function rebuildMergedDocument() {
     }
 }
 
+function updateLineCounter() {
 
+    const visible = mergedLines.length.toLocaleString('it-IT');
+    const total = allMergedLines.length.toLocaleString('it-IT');
+
+    lineCountStatusBarItem.text = `$(list-unordered) ${visible} / ${total}`;
+    lineCountStatusBarItem.tooltip = `${visible} righe visualizzate su ${total}`;
+}
 
 //
 // 🔥 PROVIDER SEMANTICO
@@ -629,6 +640,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push( fileFilterStatusBarItem);
 
+    lineCountStatusBarItem = vscode.window.createStatusBarItem(
+            vscode.StatusBarAlignment.Right,
+            98
+    );
+
+    lineCountStatusBarItem.text = "$(list-unordered) 0 / 0";
+    lineCountStatusBarItem.tooltip = "Righe visualizzate / righe totali";
+    lineCountStatusBarItem.show();
+
+    context.subscriptions.push( lineCountStatusBarItem );
+
 
     const disposable = vscode.commands.registerCommand(
         'logMerge.mergeLogs',
@@ -676,6 +698,8 @@ export function activate(context: vscode.ExtensionContext) {
 
             allMergedLines = result.lines;
             mergedLines = [...allMergedLines];
+
+            updateLineCounter();
 
             currentSeverityFilter = "ALL";
 
