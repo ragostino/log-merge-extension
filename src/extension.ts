@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { mergeLogs, MergedLine } from './merge';
 
+
 //
 // 🔥 120 TOKEN SEMANTICI: file0_sev0 … file19_sev5
 //
@@ -14,7 +15,11 @@ tokenTypesLegend.forEach((t, i) => tokenTypes.set(t, i));
 
 export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
+let currentSeverityFilter = "ALL";
+let filterStatusBarItem: vscode.StatusBarItem;
+
 let mergedLines: MergedLine[] = [];
+let allMergedLines: MergedLine[] = [];
 
 const ambiguityDecorationType =
     vscode.window.createTextEditorDecorationType({
@@ -199,6 +204,93 @@ function applyTimestampAmbiguityDecorators() {
     );
 }
 
+async function applySeverityFilter() {
+
+    const selected = await vscode.window.showQuickPick(
+        [
+            'ALL',
+            'TRACE',
+            'DEBUG',
+            'INFO',
+            'WARN',
+            'ERROR',
+            'FATAL'
+        ],
+        {
+            title: 'Minimum severity'
+        }
+    );
+
+    if (!selected) {
+        return;
+    }
+
+    currentSeverityFilter = selected;
+    filterStatusBarItem.text = `$(filter) ${currentSeverityFilter}+`;
+
+    const thresholds: Record<string, number> = {
+        FATAL: 0,
+        ERROR: 1,
+        WARN: 2,
+        INFO: 3,
+        DEBUG: 4,
+        TRACE: 5
+    };
+
+    if (selected === 'ALL') {
+        mergedLines = [...allMergedLines];
+
+    } else {
+
+        const threshold = thresholds[selected];
+        mergedLines =
+            allMergedLines.filter(
+                l => l.severityIndex <= threshold
+            );
+    }
+
+    await rebuildMergedDocument();
+}
+
+async function rebuildMergedDocument() {
+
+    const text =
+        mergedLines
+            .map(l => l.text)
+            .join('\n');
+
+    const uri =
+        vscode.Uri.parse('untitled:merged-output');
+
+    const doc =
+        await vscode.workspace.openTextDocument(uri);
+
+    await vscode.languages.setTextDocumentLanguage(
+        doc,
+        'mergedlog'
+    );
+
+    const edit = new vscode.WorkspaceEdit();
+
+    const fullRange = new vscode.Range(
+        doc.positionAt(0),
+        doc.positionAt(doc.getText().length)
+    );
+
+    edit.replace(
+        uri,
+        fullRange,
+        text
+    );
+
+
+    await vscode.workspace.applyEdit(edit);
+
+    await vscode.window.showTextDocument(doc);
+
+    applyFileBoundaryDecorators();
+    applyTimestampAmbiguityDecorators();
+}
 
 //
 // 🔥 PROVIDER SEMANTICO
@@ -238,6 +330,18 @@ class LogSemanticTokenProvider implements vscode.DocumentSemanticTokensProvider 
 // 🔥 ATTIVAZIONE ESTENSIONE
 //
 export function activate(context: vscode.ExtensionContext) {
+
+    filterStatusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        100
+    );
+
+    filterStatusBarItem.text = "$(filter) ALL";
+    filterStatusBarItem.tooltip = "Filtro severità attivo";
+    filterStatusBarItem.command = "logMerge.filterSeverity";
+    filterStatusBarItem.show();
+
+    context.subscriptions.push(filterStatusBarItem);
 
     const disposable = vscode.commands.registerCommand(
         'logMerge.mergeLogs',
@@ -281,7 +385,11 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             );
 
-            mergedLines = result.lines;
+            // mergedLines = result.lines;
+
+            allMergedLines = result.lines;
+            mergedLines = [...allMergedLines];
+
 
             const uri = vscode.Uri.parse('untitled:merged-output');
             let doc = await vscode.workspace.openTextDocument(uri);
@@ -321,6 +429,13 @@ export function activate(context: vscode.ExtensionContext) {
                 );
             }
         })
+    );
+  
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'logMerge.filterSeverity',
+            applySeverityFilter
+        )
     );
 }
 

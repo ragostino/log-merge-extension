@@ -52,6 +52,10 @@
       {
         "command": "logMerge.mergeLogs",
         "title": "Merge Logs"
+      },
+      {
+        "command": "logMerge.filterSeverity",
+        "title": "Log Merge: Filter Severity"
       }
     ]
 
