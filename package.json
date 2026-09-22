@@ -3,7 +3,7 @@
   "displayName": "Log Merge Extension",
   "description": "Unisce più file di log ordinandoli per timestamp, colorando per file e gravità, e marcando inizio/fine file.",
   "version": "0.0.1",
-  "publisher": "roberto",
+  "publisher": "ragostino",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -70,7 +70,8 @@
       "themes/**",
       "syntaxes/**",
       "package.json",
-      "readme.md",
+      "README.md",
+      "LEGGIMI.txt",
       "LICENSE"
   ],
 
