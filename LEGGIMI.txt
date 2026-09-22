@@ -1,0 +1,12 @@
+# Log Merge Extension
+
+E' un'estensione per Visual Code di Microsoft.
+Consente  di miscelare più files di logs  ordinando le righe cronologicamente, in un unico file.
+
+Per richiamare l'estensione,  digitare i tasti: "Shift + Ctrl + P" e scrivere: "Merge Logs"; nella finestra che comparirà selezionari tutti i files interessati dal periodo che si sta esaminando e quindi Invio.
+
+Dopo qualche minuto, apparirà un unico file, ottenuto dalla miscelazione di tutti i files.
+
+Ogni file sarà contraddistinto da un colore, ogni riga assumerà una sfumatura di quel colore in funzione del livello di gravità del tracciamento.
+
+Criticità note: poichè la granularità del timestamp è il millisecondo, può capitare, in particolare tra files diversi, che alcune righe possano non essere nel reale ordine cronologico.
