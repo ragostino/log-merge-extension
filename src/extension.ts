@@ -72,6 +72,16 @@ const fileBaseColors: string[] = [
 ];
 
 
+const SEVERITY_THRESHOLDS: Record<string, number> = {
+    FATAL: 0,
+    ERROR: 1,
+    WARN: 2,
+    INFO: 3,
+    DEBUG: 4,
+    TRACE: 5
+};
+
+
 //
 // 🔥 TABELLA COLORI (duplicata dal tema mergedlog-theme.json)
 //
@@ -134,7 +144,7 @@ function applyFileBoundaryDecorators() {
     if (!editor) return;
 
     if (mergedLines.length > MAX_DECORATED_LINES) {
-       console.log("Skipping decorators, too many lines");
+       if (DEBUG) console.log("Skipping decorators, too many lines");
        editor.setDecorations( boundaryDecorationType, []);
        return;
     }
@@ -178,7 +188,7 @@ function applyTimestampAmbiguityDecorators() {
 
     if (mergedLines.length > MAX_AMBIGUITY_LINES) {
 
-        console.log(`Skipping ambiguity decorators (${mergedLines.length} lines)`);
+        if (DEBUG) console.log(`Skipping ambiguity decorators (${mergedLines.length} lines)`);
 
         const editor = vscode.window.activeTextEditor;
 
@@ -328,15 +338,6 @@ async function applyCurrentFilters() {
         console.log( "Before filter:", allMergedLines.length );
     }
 
-    const thresholds: Record<string, number> = {
-        FATAL: 0,
-        ERROR: 1,
-        WARN: 2,
-        INFO: 3,
-        DEBUG: 4,
-        TRACE: 5
-    };
-
     mergedLines = allMergedLines.filter(line => {
 
         if (
@@ -350,7 +351,7 @@ async function applyCurrentFilters() {
             return true;
         }
 
-        const threshold = thresholds[currentSeverityFilter];
+        const threshold = SEVERITY_THRESHOLDS[currentSeverityFilter];
 
         return line.severityIndex <= threshold;
     });
@@ -515,6 +516,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push( lineCountStatusBarItem );
 
+    filterStatusBarItem.hide();
+    fileFilterStatusBarItem.hide();
+    lineCountStatusBarItem.hide();
+
     const disposable = vscode.commands.registerCommand(
         'logMerge.mergeLogs',
         async () => {
@@ -592,6 +597,10 @@ export function activate(context: vscode.ExtensionContext) {
 
             await vscode.window.showTextDocument(doc);
             await checkTheme();
+            
+            filterStatusBarItem.show();
+            fileFilterStatusBarItem.show();
+            lineCountStatusBarItem.show();
 
             applyFileBoundaryDecorators();
             applyTimestampAmbiguityDecorators();
@@ -635,6 +644,31 @@ export function activate(context: vscode.ExtensionContext) {
             applyFileFilter
         )
     );
+
+    context.subscriptions.push(
+        vscode.workspace.onDidCloseTextDocument(
+            (document) => {
+                if (
+                    document.uri.toString() ===
+                    "untitled:merged-output"
+                ) {
+
+                    filterStatusBarItem.hide();
+                    fileFilterStatusBarItem.hide();
+                    lineCountStatusBarItem.hide();
+
+                    mergedDocument = undefined;
+
+                    if (DEBUG) {
+                        console.log(
+                            "Merged document closed"
+                        );
+                    }
+                }
+            }
+        )
+    );
+
 }
 
 export function deactivate() {}

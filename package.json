@@ -66,18 +66,29 @@
     "commands": [
       {
         "command": "logMerge.mergeLogs",
-        "title": "Merge Logs"
+        "title": "Merge Logs",
+        "category": "Log Merge"
       },
       {
         "command": "logMerge.filterSeverity",
-        "title": "Log Merge: Filter Severity"
+        "title": "Log Merge: Filter Severity",
+        "category": "Log Merge"
       },
       {
         "command": "logMerge.filterFiles",
-        "title": "Log Merge: Filter Files"
+        "title": "Log Merge: Filter Files",
+        "category": "Log Merge"
       }
     ],
-    
+
+    "keybindings": [
+      {
+      "command": "logMerge.mergeLogs",
+      "key": "ctrl+alt+m",
+      "when": "editorTextFocus"
+      }
+    ],
+
     "categories": [
       "Other",
       "Debuggers"
