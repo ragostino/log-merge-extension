@@ -2,12 +2,24 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as readline from 'readline';
 
+const DEBUG = true;
+
+// let patterns: string[] = [];
+// let patterns = vscode.workspace
+//         .getConfiguration("logMerge")
+//         .get<string[]>(
+//             "timestampPatterns",
+//             []
+//         );
+
 const patterns = vscode.workspace
         .getConfiguration("logMerge")
         .get<string[]>(
             "timestampPatterns",
             []
         );
+
+    
 
 //
 // Struttura dati usata da extension.ts
@@ -21,6 +33,7 @@ export interface MergedLine {
     timestamp: number;      // timestamp estratto dalla riga
     isFirst: boolean;       // prima riga del file
     isLast: boolean;        // ultima riga del file
+    blockId: number;        // id del blocco di timestamp (incrementato ad ogni nuovo timestamp)
 }
 
 //
@@ -47,8 +60,7 @@ function extractTimestamp(line: string): number {
         );
 
     if (!match) {
-        match =
-            tryCustomTimestampPatterns(line);
+//        match = tryCustomTimestampPatterns(line);
     }
 
     if (!match) {
@@ -100,10 +112,11 @@ function tryCustomTimestampPatterns(
             line.match(regex);
 
         if (match) {
-
-            console.log(
-                `Timestamp matched using custom pattern #${i + 1}`
-            );
+            if (DEBUG) {
+                console.log(
+                    `Timestamp matched using custom pattern #${i + 1}`
+                );
+            }
 
             return match;
         }
@@ -121,7 +134,9 @@ function tryCustomTimestampPatterns0(
         const match = line.match(regex);
 
         if (match) {
-            console.log( `Timestamp matched using custom pattern #${pattern}`);
+            if (DEBUG) {
+                console.log( `Timestamp matched using custom pattern #${pattern}`);
+            }
             return match;
         }        
     }
@@ -142,11 +157,16 @@ export async function mergeLogs(
 ): Promise<{ lines: MergedLine[], text: string }> {
 
     const allLines: MergedLine[] = [];
-
+    let globalBlockId = 0;
+    
     for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
 
         const fileUri = files[fileIndex];
         const root = fileUri.path.split("/").pop() || `file${fileIndex}`;
+
+        if (DEBUG) {
+            console.log( "file: ", root );
+        }        
 
         progressCallback?.(
             fileIndex + 1,
@@ -158,22 +178,43 @@ export async function mergeLogs(
         const rl = readline.createInterface({ input: stream });
 
         let fileLineIndex = 0;
+        let lastTimestamp = 0;
+        let currentBlockId = 0;
+
         let collected: MergedLine[] = [];
 
         for await (const line of rl) {
 
-            const severityIndex = detectSeverity(line);
-            const timestamp = extractTimestamp(line);
+            if (DEBUG) {
+                if (fileLineIndex % 10000 === 0) {
+                    const mem =
+                        Math.round(
+                            process.memoryUsage().rss / 1024 / 1024
+                        );
+                    console.log(
+                        `${root} line=${fileLineIndex} mem=${mem}MB`
+                    );
+                }
+            }        
 
-            // collected.push({
-            //     text: line,
-            //     root,
-            //     fileIndex,
-            //     fileLineIndex,
-            //     severityIndex,
-            //     isFirst: false,
-            //     isLast: false
-            // });
+            const severityIndex = detectSeverity(line);
+            let timestamp = extractTimestamp(line);
+
+            if (timestamp === 0) {
+                timestamp = lastTimestamp;
+            } else {
+                
+                lastTimestamp = timestamp;
+                currentBlockId = ++globalBlockId;
+            }
+
+            if (fileLineIndex % 10000 === 0) {
+                console.log(
+                    `line=${fileLineIndex}` +
+                    ` objects=${collected.length}` +
+                    ` heap=${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`
+                );
+            }
 
             collected.push({
                 text: line,
@@ -182,6 +223,7 @@ export async function mergeLogs(
                 fileLineIndex,
                 severityIndex,
                 timestamp,
+                blockId: currentBlockId,
                 isFirst: false,
                 isLast: false
             });
@@ -195,31 +237,58 @@ export async function mergeLogs(
             collected[collected.length - 1].isLast = true;
         }
 
-        allLines.push(...collected);
+        for (const item of collected) {
+            allLines.push(item);
+        }
+        // allLines.push(...collected);
     }
 
     //
     // Ordina tutte le righe per timestamp
     //
     allLines.sort((a, b) => {
-        
-        const ta = extractTimestamp(a.text);
-        const tb = extractTimestamp(b.text);
-        
-        // if (ta !== tb)
-            return ta - tb;
+    
+         if (a.timestamp !== b.timestamp) {
+            return a.timestamp - b.timestamp;
+        }
 
-        // if (a.fileIndex !== b.fileIndex)
-        //     return a.fileIndex - b.fileIndex;
+        if (a.blockId !== b.blockId) {
+            return a.blockId - b.blockId;
+        }
 
+        return a.fileLineIndex - b.fileLineIndex;
+        
+        // if (a.timestamp !== b.timestamp) {
+        //     return a.timestamp - b.timestamp;
+        // }
+        //  
         // return a.fileLineIndex - b.fileLineIndex;
 
+        // const ta = extractTimestamp(a.text);
+        // const tb = extractTimestamp(b.text);
+        
+        // // if (ta !== tb)
+        //     return ta - tb;
+
+        // // if (a.fileIndex !== b.fileIndex)
+        // //     return a.fileIndex - b.fileIndex;
+
+        // // return a.fileLineIndex - b.fileLineIndex;
+
     });
+
+    if (DEBUG) {
+        console.log( "Sort completed" );
+    }
 
     //
     // Costruisce il testo finale
     //
     const mergedText = allLines.map(l => l.text).join("\n");
+
+    vscode.window.showInformationMessage(
+        `Loaded ${allLines.length} lines`
+    );
 
     return {
         lines: allLines,

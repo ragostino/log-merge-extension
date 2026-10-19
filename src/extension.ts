@@ -18,8 +18,6 @@ tokenTypesLegend.forEach((t, i) => tokenTypes.set(t, i));
 
 export const legend = new vscode.SemanticTokensLegend(tokenTypesLegend, []);
 
-let mergedDocument: vscode.TextDocument | undefined;
-
 let rebuilding = false;
 let currentSeverityFilter = "ALL";
 let selectedFiles = new Set<string>();
@@ -216,7 +214,13 @@ function applyTimestampAmbiguityDecorators() {
 
         const groupSize = end - start + 1;
         
-        if (groupSize > 1) {
+        const blocks = new Set(
+                        mergedLines
+                            .slice(start, end + 1)
+                            .map(l => l.blockId)
+                    );
+                    
+        if (blocks.size > 1) {
 
             decorations.push({
                 range: new vscode.Range(
@@ -337,7 +341,8 @@ async function applyCurrentFilters() {
 
         console.log( "Before filter:", allMergedLines.length );
     }
-
+    
+    
     mergedLines = allMergedLines.filter(line => {
 
         if (
@@ -357,6 +362,8 @@ async function applyCurrentFilters() {
     });
 
     if (DEBUG) {
+        console.log(mergedLines.slice(0,5).map(l => `${l.root}:${l.fileLineIndex}`) );
+        console.log(`Filtered ${mergedLines.length} lines out of ${allMergedLines.length}`);  
         console.log( "After filter:", mergedLines.length );
         console.log( "SEVERITY SAMPLE", mergedLines.slice(0, 20).map(l => l.severityIndex) );
     }
@@ -388,19 +395,22 @@ async function rebuildMergedDocument() {
                 .join('\n');
 
         const uri = vscode.Uri.parse('untitled:merged-output');
+        
+        if (DEBUG) { 
+            console.log("OPEN DOCUMENT");
+            console.log( "active:", vscode.window.activeTextEditor?.document.uri.toString() );
+        }
 
         
-        if (DEBUG) { console.log("OPEN DOCUMENT"); }
+        const doc = vscode.workspace.textDocuments.find( d => d.uri.toString() === 'untitled:merged-output');
 
-        if (!mergedDocument) {
+        if (!doc) {
+            console.log("Unable to recover merged document");
             return;
         }
-        const doc = mergedDocument;
 
-        await vscode.languages.setTextDocumentLanguage(
-            doc,
-            'mergedlog'
-        );
+        await vscode.languages.setTextDocumentLanguage( doc, 'mergedlog' );
+        if (DEBUG) { console.log("Document language set to mergedlog"); }
 
         const edit = new vscode.WorkspaceEdit();
 
@@ -417,6 +427,9 @@ async function rebuildMergedDocument() {
 
         if (DEBUG) { console.time("replace"); }
         await vscode.workspace.applyEdit(edit);
+
+        // todo: apply here the fix
+
         if (DEBUG) { console.timeEnd("replace"); }
         
         applyFileBoundaryDecorators();
@@ -553,6 +566,10 @@ export function activate(context: vscode.ExtensionContext) {
 
                         }
                     );
+
+                    vscode.window.showInformationMessage(
+                        `Merged: ${result.lines.length} lines`
+                    );
                     
                     progress.report({
                         message: `Building merged view (${result.lines.length} lines)...`
@@ -581,19 +598,24 @@ export function activate(context: vscode.ExtensionContext) {
             selectedFiles = new Set( allMergedLines.map( l => l.root ) );
 
             const uri = vscode.Uri.parse('untitled:merged-output');
-            if (!mergedDocument) {
-                mergedDocument = await vscode.workspace.openTextDocument(uri);
+
+            let doc = vscode.workspace.textDocuments.find( d => d.uri.toString() === uri.toString()  );
+            if (!doc) {
+                doc = await vscode.workspace.openTextDocument(uri);
             }
-            const doc = mergedDocument;
-            
             await vscode.languages.setTextDocumentLanguage(doc, 'mergedlog');
 
             const edit = new vscode.WorkspaceEdit();
-            if (doc.getText().length > 0)
+            if ( doc.getText().length > 0 )
                 edit.replace(uri, new vscode.Range(0, 0, doc.lineCount, 0), result.text);
             else
                 edit.insert(uri, new vscode.Position(0, 0), result.text);
             await vscode.workspace.applyEdit(edit);
+
+            if (DEBUG) {
+                console.log("Document updated");
+                console.log("Merged lines:", mergedLines.length);
+            }
 
             await vscode.window.showTextDocument(doc);
             await checkTheme();
@@ -624,9 +646,13 @@ export function activate(context: vscode.ExtensionContext) {
                 const info = mergedLines[line];
                 if (!info) return;
 
-                return new vscode.Hover(
-                    `File: **${info.root}**\nRiga nel file: ${info.fileLineIndex + 1}`
-                );
+                return new vscode.Hover([
+                        `File: ${info.root}`,
+                        `Riga nel file: ${info.fileLineIndex + 1}`,
+                        `FileIndex: ${info.fileIndex}`,
+                        `BlockId: ${info.blockId}`,
+                        `Timestamp: ${formatTimestamp(info.timestamp)}`
+                    ].join('\n') );
             }
         })
     );
@@ -648,22 +674,15 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.workspace.onDidCloseTextDocument(
             (document) => {
-                if (
-                    document.uri.toString() ===
-                    "untitled:merged-output"
-                ) {
+                if (DEBUG) { console.log("onDidCloseTextDocument called"); }
+            
+                if ( document.uri.toString() === "untitled:merged-output") {
 
                     filterStatusBarItem.hide();
                     fileFilterStatusBarItem.hide();
                     lineCountStatusBarItem.hide();
 
-                    mergedDocument = undefined;
-
-                    if (DEBUG) {
-                        console.log(
-                            "Merged document closed"
-                        );
-                    }
+                    if (DEBUG) { console.log("Merged pane closed"); }
                 }
             }
         )

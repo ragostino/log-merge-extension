@@ -10,3 +10,35 @@ Dopo qualche minuto, apparirà un unico file, ottenuto dalla miscelazione di tut
 Ogni file sarà contraddistinto da un colore, ogni riga assumerà una sfumatura di quel colore in funzione del livello di gravità del tracciamento.
 
 Criticità note: poichè la granularità del timestamp è il millisecondo, può capitare, in particolare tra files diversi, che alcune righe possano non essere nel reale ordine cronologico.
+
+
+TODO:
+
+evitare la miscelazione di righe da più files quando non necessario: vedi a seguire un esempio:
+
+2026-10-01 12:14:00,917 DEBUG (MonitorInfo.java:161) Site <1> Host <P-AGOSTINO2/127.0.0.1> - Thread info
+2026-10-01 12:14:00,917 DEBUG (MonitorInfo.java:169) 
+	 - Thread[#1,main,5,main]class: [java.lang.Thread], alive: true
+	 - Thread[#27,Log4j2-TF-3-Scheduled-1,5,main]class: [org.apache.logging.log4j.core.util.Log4jThread], alive: true
+	 - Thread[#28,Log4j2-TF-3-Scheduled-2,5,main]class: [org.apache.logging.log4j.core.util.Log4jThread], alive: true
+	 - Thread[#29,Log4j2-TF-3-Scheduled-3,5,main]class: [org.apache.logging.log4j.core.util.Log4jThread], alive: true
+2026-10-01 12:14:00,917 DEBUG (NeClusterMan.java:141) Site <1> - NeClusterMan build map of valid ne items 6 
+	 - Thread[#30,Log4j2-TF-3-Scheduled-4,5,main]class: [org.apache.logging.log4j.core.util.Log4jThread], alive: true
+2026-10-01 12:14:00,917 DEBUG (NeClusterMan.java:143) Site <1> - NeClusterMan (PHASE 1) starting to remove the not valid nes...
+	 - Thread[#31,Log4j2-TF-3-Scheduled-5,5,main]class: [org.apache.logging.log4j.core.util.Log4jThread], alive: true
+2026-10-01 12:14:00,917 DEBUG (NeClusterMan.java:184) Site <1> - NeClusterMan (PHASE 2) starting to add the new nes...
+	 - Thread[#34,mysql-cj-abandoned-connection-cleanup,5,main]class: [java.lang.Thread], alive: true
+2026-10-01 12:14:00,917 DEBUG (NeClusterMan.java:219) Site <1> - ClusterKey: SecondaryClu1_909_900 already present in the map
+	 - Thread[#36,HikariPool-1 housekeeper,5,main]class: [java.lang.Thread], alive: true
+
+
+
+TypeScript
+    ↓
+npm run compile
+    ↓
+out/*.js
+    ↓
+vsce package
+    ↓
+estensione.vsix
