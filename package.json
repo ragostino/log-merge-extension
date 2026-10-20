@@ -2,7 +2,7 @@
   "name": "log-merge-extension",
   "displayName": "Log Merge Extension",
   "description": "Unisce più file di log ordinandoli per timestamp, colorando per file e gravità, e marcando inizio/fine file.",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "publisher": "ragostino",
   "icon": "images/icon.png",
   "engines": {

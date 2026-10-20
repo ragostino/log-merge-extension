@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as readline from 'readline';
 
-const DEBUG = true;
+const DEBUG = false;
 
 // let patterns: string[] = [];
 // let patterns = vscode.workspace
