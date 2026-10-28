@@ -280,7 +280,70 @@ Custom timestamp patterns currently require:
 
 ## Version
 
-Current version: 0.0.1
+Current version: 0.1.1
+
+---
+
+## Release Notes
+
+### Version 0.1.1
+
+#### New Features
+
+- Added configurable timestamp recognition through the `logMerge.timestampPatterns` setting.
+- Multiple timestamp patterns can be evaluated sequentially.
+- Added line counters in the VS Code status bar showing:
+  - visible lines
+  - total loaded lines
+- Added keyboard shortcut support for launching the merge command (`Shift+Alt+M`).
+
+#### Improved Timestamp Handling
+
+- Multiline log blocks are now handled more accurately.
+- Lines that do not contain a timestamp inherit the timestamp block of the most recent timestamped event.
+- Introduced internal block tracking (`blockId`) to preserve multiline event grouping.
+
+Examples:
+
+- Java exception stack traces
+- Parameter dumps
+- SOAP/XML payloads
+- SQL error details
+- Multiline diagnostic messages
+
+remain logically associated with the originating log event after the merge process.
+
+#### Improved Ambiguity Detection
+
+Timestamp ambiguity detection now evaluates timestamp ownership through internal block identifiers.
+
+This avoids reporting false ambiguities for multiline log blocks that belong to the same original event.
+
+#### Performance Improvements
+
+- Fixed a critical issue causing:
+  ```text
+  Maximum call stack size exceeded
+  ```
+  when processing very large log datasets.
+
+- Replaced large-array spread operations with incremental insertion logic to support hundreds of thousands of log entries safely.
+
+- Successfully tested with datasets containing several hundred thousand log lines.
+
+#### Stability Improvements
+
+- Improved handling of merged document lifecycle.
+- Status bar indicators are automatically hidden when the merged document is closed.
+- Status bar indicators are automatically restored when a new merge is executed.
+- Reduced debug logging and diagnostic overhead.
+
+#### Internal Refactoring
+
+- Simplified timestamp extraction workflow.
+- Removed obsolete legacy code paths.
+- Improved filtering consistency between merged and visible datasets.
+- Improved large dataset robustness.
 
 ---
 

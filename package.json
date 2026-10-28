@@ -85,7 +85,7 @@
       {
       "command": "logMerge.mergeLogs",
       "key": "ctrl+alt+m",
-      "when": "editorTextFocus"
+      "when": "true"
       }
     ],
 
@@ -115,5 +115,10 @@
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.90.0"
-  }
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+        "supported": true
+    }
+}
 }

@@ -179,6 +179,7 @@ export async function mergeLogs(
 
         let fileLineIndex = 0;
         let lastTimestamp = 0;
+        let lastSeverityIndex = 3;
         let currentBlockId = 0;
 
         let collected: MergedLine[] = [];
@@ -197,14 +198,15 @@ export async function mergeLogs(
                 }
             }        
 
-            const severityIndex = detectSeverity(line);
+            let severityIndex = detectSeverity(line);
             let timestamp = extractTimestamp(line);
 
             if (timestamp === 0) {
                 timestamp = lastTimestamp;
-            } else {
-                
+                severityIndex = lastSeverityIndex;
+            } else {                
                 lastTimestamp = timestamp;
+                lastSeverityIndex = severityIndex;
                 currentBlockId = ++globalBlockId;
             }
 
